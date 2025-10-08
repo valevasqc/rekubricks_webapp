@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo Bricklink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Catálogo de Piezas</h1>
+    <div class="card-container">
+        {% for piece in pieces %}
+        <div class="card">
+            <img src="{{ piece['Image_URL'] }}" alt="{{ piece['Piece_Name'] }}">
+            <h2>{{ piece['Piece_Name'] }}</h2>
+            <p class="color-price">{{ piece['Color'] }} | ${{ piece['Price'] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

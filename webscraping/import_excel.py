@@ -2,7 +2,7 @@
 import pandas as pd
 
 def import_excel():
-    inventory_df = pd.read_excel("datos_inventario.xlsx")
+    inventory_df = pd.read_excel("../data/datos_inventario.xlsx")
     inventory_df.columns = [col.strip().upper() for col in inventory_df.columns] 
 
     inventory_df = inventory_df.rename(columns={ # Renombrar según los nombres de columnas

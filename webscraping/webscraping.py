@@ -73,6 +73,6 @@ for piece in pieces:
 
 # Guardar en Excel (sobrescribe si existe)
 df = pd.DataFrame(results)
-df.to_excel("bricklink_pieces.xlsx", index=False)
+df.to_excel("../data/bricklink_pieces.xlsx", index=False)
 
 print("Scraping completado. Archivo guardado como 'bricklink_pieces.xlsx'")
