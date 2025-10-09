@@ -1,3 +1,80 @@
+// ==================== SEARCH AND FILTER FUNCTIONALITY ====================
+
+let currentSearchTerm = '';
+let currentCategory = 'all';
+
+// Search function
+function searchProducts(searchTerm) {
+    currentSearchTerm = searchTerm.toLowerCase();
+    applyFilters();
+}
+
+// Filter by category function
+function filterByCategory(category) {
+    currentCategory = category;
+    applyFilters();
+}
+
+// Apply both search and category filters
+function applyFilters() {
+    const cards = document.querySelectorAll('.card');
+    
+    cards.forEach(card => {
+        const cardName = card.getAttribute('data-name') || '';
+        const cardColor = card.getAttribute('data-color') || '';
+        const cardId = card.getAttribute('data-id') || '';
+        const cardCategory = card.getAttribute('data-category') || '';
+        
+        // Check search criteria
+        const matchesSearch = currentSearchTerm === '' || 
+            cardName.includes(currentSearchTerm) || 
+            cardColor.includes(currentSearchTerm) || 
+            cardId.includes(currentSearchTerm);
+        
+        // Check category criteria
+        const matchesCategory = currentCategory === 'all' || cardCategory === currentCategory;
+        
+        // Show card only if it matches both criteria
+        if (matchesSearch && matchesCategory) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Clear all filters and search
+function clearAll() {
+    currentSearchTerm = '';
+    currentCategory = 'all';
+    
+    // Reset UI elements
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    
+    if (searchInput) searchInput.value = '';
+    if (categoryFilter) categoryFilter.value = 'all';
+    if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+    
+    // Show all cards
+    applyFilters();
+}
+
+// Show/hide clear search button
+function toggleClearSearchButton() {
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    
+    if (searchInput && clearSearchBtn) {
+        if (searchInput.value.length > 0) {
+            clearSearchBtn.style.display = 'flex';
+        } else {
+            clearSearchBtn.style.display = 'none';
+        }
+    }
+}
+
 // ==================== CART STATE ====================
 
 // Cart state - stored in localStorage
@@ -165,7 +242,7 @@ function sendOrderToWhatsApp() {
     message += `\nSubtotal: Q${subtotal.toFixed(2)}`;
 
     // Encode message and create WhatsApp URL
-    const phoneNumber = '+50252054584';
+    const phoneNumber = '+50253771641';
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
@@ -272,4 +349,31 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         }
     });
+
+    // Search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            searchProducts(e.target.value);
+            toggleClearSearchButton();
+        });
+    }
+
+    // Category dropdown
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function(e) {
+            filterByCategory(e.target.value);
+        });
+    }
+
+    // Clear search button (X)
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            document.getElementById('searchInput').value = '';
+            searchProducts('');
+            toggleClearSearchButton();
+        });
+    }
 });
