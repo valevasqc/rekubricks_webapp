@@ -159,8 +159,7 @@ function updateCartDisplay() {
 // ==================== CART ACTIONS ====================
 
 // Add item to cart or increase quantity
-function addToCart(id, pieceId, name, color, price, image) {
-    console.log(`Adding to cart: ID=${id}, PieceID=${pieceId}, Name=${name}, Color=${color}`); // Debug
+function addToCart(id, pieceId, idColor, idMolde, name, color, price, image) {
     const existingItem = cart.find(item => item.id === id);
     
     if (existingItem) {
@@ -169,6 +168,8 @@ function addToCart(id, pieceId, name, color, price, image) {
         cart.push({
             id: id,
             pieceId: pieceId,
+            idColor: idColor,
+            idMolde: idMolde,
             name: name,
             color: color,
             price: parseFloat(price),
@@ -237,7 +238,17 @@ function sendOrderToWhatsApp() {
     let message = 'Hola, quisiera realizar un pedido:\n\n';
     message += 'Detalle:\n';
     cart.forEach(item => {
-        message += `- ID: ${item.pieceId}, Nombre: ${item.name}, Cantidad: ${item.quantity}\n`;
+        let idInfo = '';
+        // Clean .0 from numeric IDs and handle 'nan' values
+        const cleanIdColor = item.idColor && item.idColor !== '' && item.idColor !== 'nan' ? String(item.idColor).replace('.0', '') : '';
+        const cleanIdMolde = item.idMolde && item.idMolde !== 'nan' ? String(item.idMolde).replace('.0', '') : '';
+        
+        if (cleanIdColor && cleanIdColor !== '') {
+            idInfo = `ID Esp: ${cleanIdColor}, Item: ${cleanIdMolde}`;
+        } else {
+            idInfo = `Item: ${cleanIdMolde}`;
+        }
+        message += `- ${idInfo}, Color: ${item.color}, Cantidad: ${item.quantity}\n`;
     });
     message += `\nSubtotal: Q${subtotal.toFixed(2)}`;
 
@@ -342,6 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
             addToCart(
                 e.target.dataset.id,
                 e.target.dataset.pieceId,
+                e.target.dataset.idColor, // Fixed: using camelCase
+                e.target.dataset.idMolde, // Fixed: using camelCase
                 e.target.dataset.name,
                 e.target.dataset.color,
                 e.target.dataset.price,

@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
+import os
 from color_ids import color_ids
 from import_excel import import_excel
 
@@ -59,12 +60,18 @@ for piece in pieces:
             img_url = "N/A"
 
     # === GUARDAR DATOS ===
+    # Usar ID_COLOR si existe, si no usar ID_MOLDE para Piece_ID (para compatibilidad con frontend)
+    piece_id_for_frontend = piece["ID_COLOR"] if piece["ID_COLOR"] else piece["ID_MOLDE"]
+    
     results.append({
-        "Piece_ID": pid,
+        "Piece_ID": piece_id_for_frontend,  # Para compatibilidad con frontend
+        "ID_COLOR": piece["ID_COLOR"],      # Columna original del Excel
+        "ID_MOLDE": piece["ID_MOLDE"],      # Columna original del Excel  
         "Piece_Name": piece_name,          
         "Color": piece["COLOR"].title(),  
         "Image_URL": img_url,
         "Weight": weight
+        # TODO: agregar categoría y precio automáticamente
     })
 
     print(f"Scraping {pid} ({piece['COLOR'].title()})...")
@@ -73,6 +80,12 @@ for piece in pieces:
 
 # Guardar en Excel (sobrescribe si existe)
 df = pd.DataFrame(results)
-df.to_excel("../data/bricklink_pieces.xlsx", index=False)
 
-print("Scraping completado. Archivo guardado como 'bricklink_pieces.xlsx'")
+# Get the project root directory (one level up from webscraping folder)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+output_path = os.path.join(project_root, "data", "bricklink_pieces.xlsx")
+
+df.to_excel(output_path, index=False)
+
+print(f"Scraping completado. Archivo guardado como '{output_path}'")

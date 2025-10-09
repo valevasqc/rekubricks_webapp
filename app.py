@@ -14,12 +14,20 @@ def load_pieces():
     if "Category" not in df.columns:
         df["Category"] = "Sin categoría"
     
+    # Handle missing ID columns gracefully (for backward compatibility)
+    if "ID_COLOR" not in df.columns:
+        df["ID_COLOR"] = ""
+    if "ID_MOLDE" not in df.columns:
+        df["ID_MOLDE"] = df["Piece_ID"]  # Use Piece_ID as fallback
+    
     # Clean and validate data
     df = df.dropna(subset=['Piece_ID', 'Piece_Name'])  # Remove rows without essential data
     df['Price'] = pd.to_numeric(df['Price'], errors='coerce').fillna(0.0)  # Convert price to numeric
     df['Image_URL'] = df['Image_URL'].fillna('N/A')  # Handle missing images
     df['Color'] = df['Color'].fillna('Sin color')  # Handle missing colors
     df['Category'] = df['Category'].fillna('Sin categoría')  # Handle missing categories
+    df['ID_COLOR'] = df['ID_COLOR'].fillna('')  # Handle missing ID_COLOR
+    df['ID_MOLDE'] = df['ID_MOLDE'].fillna('')  # Handle missing ID_MOLDE
     
     # Convert to string and clean special characters
     df['Piece_ID'] = df['Piece_ID'].astype(str).str.strip()
@@ -27,6 +35,8 @@ def load_pieces():
     df['Color'] = df['Color'].astype(str).str.strip()
     df['Category'] = df['Category'].astype(str).str.strip()
     df['Image_URL'] = df['Image_URL'].astype(str).str.strip()
+    df['ID_COLOR'] = df['ID_COLOR'].astype(str).str.strip().replace('nan', '')  # Convert NaN string to empty
+    df['ID_MOLDE'] = df['ID_MOLDE'].astype(str).str.strip().replace('nan', '')  # Convert NaN string to empty
     
     # Remove any rows where essential fields are empty after cleaning
     df = df[df['Piece_ID'] != '']
@@ -64,4 +74,4 @@ def index():
     return render_template("index.html", pieces=pieces, categories=categories)
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True)

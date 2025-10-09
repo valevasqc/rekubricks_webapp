@@ -526,6 +526,11 @@ body {
     flex-shrink: 0;
 }
 
+/* WhatsApp specific styling */
+.whatsapp-link:hover {
+    color: #25d366;
+}
+
 /* ==== Card Grid ==== */
 .card-grid {
     display: grid;
