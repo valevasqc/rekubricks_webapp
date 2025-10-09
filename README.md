@@ -1,84 +1,124 @@
-# Bricklink Webscraper (Python)
 
-Alumnos: Valeria Vásquez, Pedro Marroquín, Andrés Juárez, Julio Girón, Andrea Nisthal
+# RekuBricks Webscraper + Web App
 
-## Descripción
+[Enlace a GitHub](https://github.com/valevasqc/rekubricks_webapp)
+**Alumnos:** Valeria Vásquez, Pedro Marroquín, Andrés Juárez, Julio Girón, Andrea Nisthal
 
-Este proyecto obtiene datos de piezas LEGO desde [Bricklink](https://www.bricklink.com/) y los guarda en un archivo Excel. Actualmente extrae:
+## Descripción General
 
-* **Nombre de la pieza** (`Piece_Name`)
-* **Color** (`Color`)
-* **URL de la imagen** (`Image_URL`)
-* **Peso** (`Weight`)
+Este proyecto tiene **dos componentes principales**:
 
-En la siguiente iteración, se planea crear una **aplicación web simple** que permita visualizar estas piezas, armar un carrito temporal y enviar el contenido del carrito por **WhatsApp**, sin necesidad de iniciar sesión.
+1. **Webscraper en Python** que obtiene información de piezas LEGO desde [Bricklink](https://www.bricklink.com/) y la guarda en un archivo Excel.
+2. **Aplicación web básica con Flask** que lee el archivo Excel generado y muestra las piezas en tarjetas (cards) con imagen, nombre, color y precio (placeholder), además de permitir agregar piezas a un carrito temporal.
+
+El objetivo final es que el usuario pueda seleccionar piezas y **enviar el contenido del carrito por WhatsApp**, sin necesidad de crear cuentas ni iniciar sesión.
 
 ---
 
-## Archivos
+## Estructura del Proyecto
 
-* **`webscraping.py`**
-  Script principal de scraping. Lee la lista de piezas o usando `import_excel()`, obtiene las páginas correspondientes de Bricklink, analiza el HTML con `BeautifulSoup` y guarda los resultados en `bricklink_pieces.xlsx`.
-
-* **`import_excel.py`**
-  Función auxiliar que lee `datos_inventario.xlsx` y devuelve una lista de diccionarios con las claves: `ID_COLOR`, `ID_MOLDE`, `COLOR`.
-
-* **`color_ids.py`**
-  Diccionario que mapea nombres de colores en mayúsculas a los `colorID` de Bricklink, usado para construir URLs específicas por color.
+```
+bricklink_webapp/
+│
+├─ app.py                     # Backend Flask - renderiza la página web con las piezas
+│
+├─ templates/
+│   └─ index.html             # Plantilla principal con Jinja2 (HTML)
+│
+├─ static/
+│   └─ style.css              # Estilos CSS para las tarjetas y layout
+│
+├─ data/
+│   └─ bricklink_pieces.xlsx  # Datos generados por el scraper (entrada de la web)
+│
+└─ webscraping/              # Módulos auxiliares del scraper
+    ├─ webscraping.py        # Script principal de scraping
+    ├─ import_excel.py       # Lee datos de inventario local
+    └─ color_ids.py         # Diccionario de nombres de color → IDs Bricklink
+```
 
 ---
 
 ## Flujo de Datos
 
-1. **Entrada:** `datos_inventario.xlsx`. Cada fila representa una pieza LEGO con su color y ID de molde.
-2. **Búsqueda de ColorID:** Para cada pieza, el script revisa `color_ids.py` para obtener el `colorID`.
-3. **Scraping:**
-   * Página específica de color (`catalogItemIn.asp`) para la imagen si existe `colorID`.
-   * Página genérica (`catalogitem.page`) siempre usada para obtener nombre de pieza y peso.
-4. **Salida:** `bricklink_pieces.xlsx` con columnas:
+1. **Entrada**:
+   Un archivo `datos_inventario.xlsx` opcional, con columnas `ID`, `ID MOLDE`, `COLOR`.
+   Se convierte en una lista de piezas usando `import_excel.py`.
+
+2. **Scraping**:
+   Por cada pieza:
+   * Se busca el `colorID` correspondiente en `color_ids.py`.
+   * Se construyen URLs de Bricklink (específicas por color si aplica).
+   * Se extraen **nombre**, **imagen**, y **peso** con `BeautifulSoup`.
+
+3. **Salida**:
+   Se genera `data/bricklink_pieces.xlsx` con columnas:
    * `Piece_ID`
    * `Piece_Name`
    * `Color`
    * `Image_URL`
    * `Weight`
 
+4. **Visualización Web**:
+   Flask lee el Excel y renderiza las piezas como tarjetas con:
+   * Imagen
+   * Nombre
+   * Color
+   * Precio (por ahora en 0.0)
+   * Botón para agregar al carrito
+
 ---
 
 ## Dependencias
 
 * Python 3.x
+* `Flask`
 * `requests`
 * `beautifulsoup4`
 * `pandas`
-* `openpyxl` (para Excel)
+* `openpyxl`
 
-Instalación:
+Instalación rápida:
 
 ```bash
-python -m pip install requests beautifulsoup4 pandas openpyxl
+python -m pip install flask requests beautifulsoup4 pandas openpyxl
 ```
 
 ---
 
-## Cómo Ejecutar
+## ▶Cómo Ejecutar
 
-1. Agrega o actualiza piezas en `pieces` o en `datos_inventario.xlsx`.
-2. Ejecuta el scraper:
+1. **Ejecutar el scraper** para actualizar la base de datos:
 
 ```bash
+cd webscraping
 python webscraping.py
 ```
 
-3. El archivo `bricklink_pieces.xlsx` se sobrescribirá en el directorio del proyecto.
+Esto genera/actualiza `data/bricklink_pieces.xlsx`.
+
+2. **Levantar la aplicación web**:
+
+```bash
+cd ..
+python app.py
+```
+
+3. Visitar en el navegador:
+   👉 [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
 ---
 
-## Próximos Pasos del Proyecto: Aplicación Web
+## Estado Actual
 
-La siguiente fase es crear una **aplicación web básica** que:
+**Completado:**
 
-* Muestre las piezas obtenidas desde `bricklink_pieces.xlsx`.
-* Permita armar un carrito temporal (sin guardar estado entre recargas).
-* Envíe los detalles del carrito por **WhatsApp**.
+* Scraper funcional con Excel de salida.
+* Interfaz básica en Flask mostrando las piezas en tarjetas.
 
-Esta versión será funcional pero mínima: no tendrá cuentas de usuario, base de datos ni persistencia. Iteraciones futuras podrían incluir **interfaz más atractiva**, **base de datos para inventario** y **manejo de sesiones**.
+**En desarrollo (siguientes pasos):**
+
+* Implementar el carrito dinámico en la web (JS).
+* Introducir precios y calcular total automáticamente.
+* Generar mensaje de WhatsApp con: **nombre**, **ID**, **color**, **cantidad**, **precio**.
+* (Opcional a futuro) Añadir base de datos para persistencia e inventario en tiempo real.
