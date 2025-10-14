@@ -265,7 +265,8 @@ function sendOrderToWhatsApp() {
 
 // Update a specific card's button
 function updateCardButton(id) {
-    const button = document.querySelector(`[data-id="${id}"]`);
+    // Use more specific selector to target only the button, not the card wrapper
+    const button = document.querySelector(`.add-to-cart-btn[data-id="${id}"], .quantity-control-wrapper[data-id="${id}"]`);
     if (!button) return;
     
     const item = cart.find(item => item.id === id);
@@ -300,7 +301,8 @@ function updateCardButton(id) {
 
 // Update all card buttons on page load
 function updateAllCardButtons() {
-    const buttons = document.querySelectorAll('[data-id]');
+    // Only select actual buttons, not card wrappers
+    const buttons = document.querySelectorAll('.add-to-cart-btn[data-id], .quantity-control-wrapper[data-id]');
     buttons.forEach(button => updateCardButton(button.dataset.id));
 }
 
