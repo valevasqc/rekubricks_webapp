@@ -1,9 +1,19 @@
+"""
+RekuBricks Web Application
+Flask backend for LEGO pieces catalog with cart and WhatsApp integration.
+"""
 from flask import Flask, render_template
 import pandas as pd
 
 app = Flask(__name__)
 
 def load_pieces():
+    """
+    Load and clean piece data from Excel file.
+    
+    Returns:
+        list: List of dictionaries containing piece information.
+    """
     df = pd.read_excel("data/bricklink_pieces.xlsx")
     
     # Handle missing Price column gracefully
@@ -48,6 +58,12 @@ def load_pieces():
     return pieces
 
 def get_categories():
+    """
+    Extract unique categories from the Excel file.
+    
+    Returns:
+        list: Sorted list of unique category names.
+    """
     df = pd.read_excel("data/bricklink_pieces.xlsx")
     
     # Handle missing Category column gracefully
@@ -60,17 +76,9 @@ def get_categories():
 
 @app.route("/")
 def index():
+    """Main route - loads pieces and renders the catalog page."""
     pieces = load_pieces()
     categories = get_categories()
-    
-    # Debug: print first few pieces to see what we're getting
-    print("Debug - First 3 pieces:")
-    for i, piece in enumerate(pieces[:3]):
-        print(f"Piece {i+1}: {piece}")
-    
-    print(f"Debug - Total pieces: {len(pieces)}")
-    print(f"Debug - Categories: {categories}")
-    
     return render_template("index.html", pieces=pieces, categories=categories)
 
 if __name__ == "__main__":

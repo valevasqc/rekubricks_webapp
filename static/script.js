@@ -1,21 +1,31 @@
 // ==================== SEARCH AND FILTER FUNCTIONALITY ====================
 
+// Global state for filtering
 let currentSearchTerm = '';
 let currentCategory = 'all';
 
-// Search function
+/**
+ * Search products by term - matches name, color, or ID
+ * @param {string} searchTerm - Search query to filter products
+ */
 function searchProducts(searchTerm) {
     currentSearchTerm = searchTerm.toLowerCase();
     applyFilters();
 }
 
-// Filter by category function
+/**
+ * Filter products by category
+ * @param {string} category - Category name to filter by, or 'all' for no filter
+ */
 function filterByCategory(category) {
     currentCategory = category;
     applyFilters();
 }
 
-// Apply both search and category filters
+/**
+ * Apply both search and category filters to product cards
+ * Shows/hides cards based on current filter state
+ */
 function applyFilters() {
     const cards = document.querySelectorAll('.card');
     
@@ -41,24 +51,6 @@ function applyFilters() {
             card.style.display = 'none';
         }
     });
-}
-
-// Clear all filters and search
-function clearAll() {
-    currentSearchTerm = '';
-    currentCategory = 'all';
-    
-    // Reset UI elements
-    const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
-    
-    if (searchInput) searchInput.value = '';
-    if (categoryFilter) categoryFilter.value = 'all';
-    if (clearSearchBtn) clearSearchBtn.style.display = 'none';
-    
-    // Show all cards
-    applyFilters();
 }
 
 // Show/hide clear search button
@@ -185,7 +177,6 @@ function addToCart(id, pieceId, idColor, idMolde, name, color, price, image) {
 
 // Update quantity from cart panel
 function updateCartItemQuantity(id, change) {
-    console.log(`Updating quantity: ID=${id}, Change=${change}`); // Debug
     const item = cart.find(item => item.id === id);
     
     if (item) {
@@ -215,11 +206,6 @@ function deleteCartItem(id) {
         updateCartDisplay();
         updateCardButton(id);
     }
-}
-
-// Update quantity from product card
-function updateCardQuantity(id, change) {
-    updateCartItemQuantity(id, change);
 }
 
 // ==================== WHATSAPP INTEGRATION ====================
@@ -291,9 +277,9 @@ function updateCardButton(id) {
                     <path d="M14 11v6"></path>
                 </svg>
             </button>
-            <button class="quantity-btn" onclick="event.stopPropagation(); updateCardQuantity('${id}', -1)">−</button>
+            <button class="quantity-btn" onclick="event.stopPropagation(); updateCartItemQuantity('${id}', -1)">−</button>
             <input type="number" class="quantity-input" value="${item.quantity}" step="1" onchange="event.stopPropagation(); updateCartItemQuantity('${id}', this.value)" onclick="event.stopPropagation();">
-            <button class="quantity-btn" onclick="event.stopPropagation(); updateCardQuantity('${id}', 1)">+</button>
+            <button class="quantity-btn" onclick="event.stopPropagation(); updateCartItemQuantity('${id}', 1)">+</button>
         `;
         button.onclick = null;
     }
@@ -318,7 +304,6 @@ function clearCart() {
 }
 
 function toggleCart() {
-    console.log('Toggling cart'); // Debug
     document.getElementById('cartPanel').classList.toggle('active');
     document.getElementById('cartOverlay').classList.toggle('active');
 }
