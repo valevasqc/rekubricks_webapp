@@ -1,11 +1,9 @@
-"""
-Module to extract and match categories from piece names.
-Uses predefined category list and intelligent matching.
-"""
+"""Extract and match categories from piece names using known categories."""
+from typing import Dict
 from categories import categories
 
 
-def extract_category_from_name(piece_name):
+def extract_category_from_name(piece_name: str) -> str:
     """
     Extract category from piece name by matching against known categories.
     
@@ -55,7 +53,7 @@ def extract_category_from_name(piece_name):
     return "MISCELLANEOUS"
 
 
-def batch_categorize(molde_data):
+def batch_categorize(molde_data: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
     """
     Add category field to molde data dictionary.
     

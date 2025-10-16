@@ -119,6 +119,7 @@ function updateCartDisplay() {
         return;
     }
     
+    // TODO: allow local images, maybe using gcp realtime database 
     // Render cart items
     cartItemsContainer.innerHTML = cart.map(item => `
         <div class="cart-item">
@@ -287,6 +288,7 @@ function updateCardButton(id) {
             <input type="number" class="quantity-input" value="${item.quantity}" step="1" onchange="event.stopPropagation(); updateCartItemQuantity('${id}', this.value)" onclick="event.stopPropagation();">
             <button class="quantity-btn" onclick="event.stopPropagation(); updateCartItemQuantity('${id}', 1)">+</button>
         `;
+        // TODO: data validation, only allow ints
         button.onclick = null;
     }
 }
@@ -346,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
             addToCart(
                 e.target.dataset.id,
                 e.target.dataset.pieceId,
-                e.target.dataset.idColor, // Fixed: using camelCase
-                e.target.dataset.idMolde, // Fixed: using camelCase
+                e.target.dataset.idColor, 
+                e.target.dataset.idMolde, 
                 e.target.dataset.name,
                 e.target.dataset.color,
                 e.target.dataset.price,

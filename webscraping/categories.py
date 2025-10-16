@@ -1,3 +1,4 @@
+"""Predefined category names used for matching and filtering."""
 categories = ["BRICK",
               "PLATE",
               "TILE",
@@ -17,5 +18,4 @@ categories = ["BRICK",
               "VEHICLE",
               "MISCELLANEOUS",
               "LIFTARM",
-              "CONNECTOR",
-              "OTHER"]
+              "CONNECTOR"]

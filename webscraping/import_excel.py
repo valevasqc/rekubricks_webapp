@@ -1,14 +1,18 @@
-# === LEER DATOS DEL INVENTARIO DESDE EXCEL ===
+"""Excel import helpers for RekuBricks webscraper.
+
+Provides functions to load the full inventory and the list of unique
+ID_MOLDEs with normalized column names and defensive defaults.
+"""
+from typing import List, Dict
 import pandas as pd
 import os
 
 
-def import_excel():
-    """
-    Import full inventory with all color variants from datos_inventario.xlsx.
-    
-    Returns:
-        list: List of piece dictionaries with ID_COLOR, ID_MOLDE, COLOR
+def import_excel() -> List[Dict]:
+    """Import full inventory (all color variants) from datos_inventario.xlsx.
+
+    Returns a list of dicts with keys like ID_COLOR, ID_MOLDE, COLOR. Column
+    names are normalized to uppercase and string types are enforced for IDs.
     """
     # Get the project root directory (one level up from webscraping folder)
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,12 +43,11 @@ def import_excel():
     return pieces
 
 
-def import_unique_moldes():
-    """
-    Import unique ID_MOLDEs from id_molde.xlsx for scraping.
-    
-    Returns:
-        list: List of unique ID_MOLDE strings
+def import_unique_moldes() -> List[str]:
+    """Import unique ID_MOLDEs from id_molde.xlsx for scraping.
+
+    Returns a list of unique ID_MOLDE strings; falls back to extracting
+    from the full inventory if the file doesn't exist.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)

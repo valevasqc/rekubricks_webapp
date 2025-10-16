@@ -1,14 +1,12 @@
-"""
-Module to scrape unique ID_MOLDE data from Bricklink.
-Fetches name, weight, and raw name for category extraction.
-"""
+"""Scrape unique ID_MOLDE data from Bricklink (name and weight)."""
+from typing import Optional, Dict, List, Tuple
 import requests
 from bs4 import BeautifulSoup
 import time
 import random
 
 
-def scrape_molde_data(id_molde, headers=None):
+def scrape_molde_data(id_molde: str, headers: Optional[Dict[str, str]] = None) -> Optional[Dict[str, str]]:
     """
     Scrape data for a single ID_MOLDE from Bricklink.
     
@@ -17,7 +15,7 @@ def scrape_molde_data(id_molde, headers=None):
         headers (dict): Optional HTTP headers for the request
     
     Returns:
-        dict: Dictionary with keys 'id_molde', 'name', 'weight', or None if failed
+    dict | None: {"id_molde", "name", "weight"} or None if failed
     """
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -55,7 +53,7 @@ def scrape_molde_data(id_molde, headers=None):
         return None
 
 
-def scrape_multiple_moldes(id_moldes, delay_range=(1.5, 2.5)):
+def scrape_multiple_moldes(id_moldes: List[str], delay_range: Tuple[float, float] = (1.5, 2.5)) -> Dict[str, Dict[str, str]]:
     """
     Scrape data for multiple unique ID_MOLDEs with rate limiting.
     
@@ -64,7 +62,7 @@ def scrape_multiple_moldes(id_moldes, delay_range=(1.5, 2.5)):
         delay_range (tuple): Min and max delay in seconds between requests
     
     Returns:
-        dict: Dictionary mapping id_molde -> {name, weight}
+        dict: Mapping id_molde -> {name, weight}
     """
     headers = {"User-Agent": "Mozilla/5.0"}
     molde_data = {}

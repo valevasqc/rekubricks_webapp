@@ -1,20 +1,25 @@
+"""RekuBricks Web Application.
+
+Flask backend that reads piece data from Excel and renders a catalog
+with a client-side cart and WhatsApp integration.
 """
-RekuBricks Web Application
-Flask backend for LEGO pieces catalog with cart and WhatsApp integration.
-"""
+from typing import List, Dict
 from flask import Flask, render_template
 import pandas as pd
+# TODO: flesh out UI
 
 app = Flask(__name__)
 
-def load_pieces():
+EXCEL_PATH = "data/bricklink_pieces.xlsx"
+# TODO: connect to SQL
+
+def load_pieces() -> List[Dict]:
+    """Load and clean piece data from the Excel file.
+
+    Returns a list of row dicts ready for rendering; applies defensive
+    defaults for missing columns and values.
     """
-    Load and clean piece data from Excel file.
-    
-    Returns:
-        list: List of dictionaries containing piece information.
-    """
-    df = pd.read_excel("data/bricklink_pieces.xlsx")
+    df = pd.read_excel(EXCEL_PATH)
     
     # Handle missing Price column gracefully
     if "Price" not in df.columns:
@@ -22,7 +27,7 @@ def load_pieces():
     
     # Handle missing Category column gracefully
     if "Category" not in df.columns:
-        df["Category"] = "Sin categoría"
+        df["Category"] = "Otros"
     
     # Handle missing ID columns gracefully (for backward compatibility)
     if "ID_COLOR" not in df.columns:
@@ -40,7 +45,7 @@ def load_pieces():
     df['ID_MOLDE'] = df['ID_MOLDE'].fillna('')  # Handle missing ID_MOLDE
     
     # Convert to string and clean special characters
-    df['Piece_ID'] = df['Piece_ID'].astype(str).str.strip()
+    df['Piece_ID'] = df['Piece_ID'].astype(str).str.strip() # TODO: consieder using only ID_MOLDE+COLOR instead
     df['Piece_Name'] = df['Piece_Name'].astype(str).str.strip()
     df['Color'] = df['Color'].astype(str).str.strip()
     df['Category'] = df['Category'].astype(str).str.strip()
@@ -54,17 +59,15 @@ def load_pieces():
     df = df[df['Image_URL'] != '']
     df = df[df['Image_URL'] != 'N/A']
     
-    pieces = df.to_dict(orient="records")
-    return pieces
+    return df.to_dict(orient="records")
 
-def get_categories():
+def get_categories() -> List[str]:
+    """Extract unique categories from the Excel file.
+
+    Returns a sorted list of unique category names; if the column is
+    missing, returns the fallback category.
     """
-    Extract unique categories from the Excel file.
-    
-    Returns:
-        list: Sorted list of unique category names.
-    """
-    df = pd.read_excel("data/bricklink_pieces.xlsx")
+    df = pd.read_excel(EXCEL_PATH)
     
     # Handle missing Category column gracefully
     if "Category" not in df.columns:
@@ -76,7 +79,7 @@ def get_categories():
 
 @app.route("/")
 def index():
-    """Main route - loads pieces and renders the catalog page."""
+    """Main route that loads pieces and renders the catalog page."""
     pieces = load_pieces()
     categories = get_categories()
     return render_template("index.html", pieces=pieces, categories=categories)

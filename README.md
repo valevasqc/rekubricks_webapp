@@ -39,9 +39,13 @@ rekubricks_webapp/
 │   └── datos_inventario.xlsx     # Inventario de entrada (opcional)
 │
 └── 📂 webscraping/               # Módulo de extracción de datos
-    ├── webscraping.py            # Script principal de scraping
-    ├── import_excel.py           # Procesador de inventario local
-    └── color_ids.py             # Mapeo de colores a IDs de Bricklink
+    ├── webscraping.py            # Orquestador del scraping (por ID_MOLDE)
+    ├── scrape_moldes.py          # Extrae nombre y peso por ID_MOLDE
+    ├── generate_images.py        # Genera URLs de imagen por color (sin requests)
+    ├── process_categories.py     # Clasifica piezas por categoría
+    ├── import_excel.py           # Procesador de inventario local (IDs/colores)
+    ├── categories.py             # Lista de categorías
+    └── color_ids.py              # Mapeo de colores a IDs de Bricklink
 ```
 
 ---
@@ -50,13 +54,14 @@ rekubricks_webapp/
 
 ### 1. **Extracción de Datos (Webscraping)**
 ```
-datos_inventario.xlsx → webscraping.py → Bricklink API → bricklink_pieces.xlsx
+datos_inventario.xlsx → webscraping.py → Bricklink (scraping) → bricklink_pieces.xlsx
 ```
 
 - Lee inventario local con columnas: `ID`, `ID_COLOR`, `ID_MOLDE`, `COLOR`
 - Mapea colores a IDs numéricos usando `color_ids.py`
-- Extrae de Bricklink: nombre, peso, imagen por color
-- Genera Excel final con: `Piece_ID`, `ID_COLOR`, `ID_MOLDE`, `Piece_Name`, `Color`, `Image_URL`, `Weight`
+- Extrae de Bricklink nombre y peso por `ID_MOLDE` (menos requests, con rate limiting)
+- Genera URLs de imagen por color sin requests usando `color_ids.py`
+- Genera Excel final con: `Piece_ID`, `ID_COLOR`, `ID_MOLDE`, `Piece_Name`, `Color`, `Image_URL`, `Weight`, `Category`, `Price`
 
 ### 2. **Procesamiento Web (Flask + Pandas)**
 ```
@@ -103,7 +108,7 @@ pip install flask requests beautifulsoup4 pandas openpyxl
 cd webscraping
 python webscraping.py
 ```
-> ⚠️ **Nota:** Tarda aprox 2 horas correr el scraper completo. Se pueden usar valores de ejemplo (incluidos en comentarios de `webscraping.py`)
+> ⚠️ **Nota:** Tarda aprox 2 horas correr el scraper completo (incluye rate limiting educado entre requests). Se pueden usar valores de ejemplo (incluidos en comentarios de `webscraping.py`).
 
 ### **2. Iniciar Aplicación Web**
 ```bash
@@ -123,10 +128,15 @@ python app.py
 
 ### **Completado:**
 - [x] Scraper funcional con manejo de errores
+- [x] Optimización: scraping por ID_MOLDE y generación de imágenes sin requests
 - [x] Aplicación web responsive completa
 - [x] Sistema de carrito con persistencia
 - [x] Búsqueda y filtrado en tiempo real
 - [x] Integración WhatsApp Business
-- [x] Procesamiento robusto de datos (NaN, validaciones)
-- [x] Interfaz de usuario moderna y accesible
 
+### **Mejoras futuras:**
+- [] Hosting
+- [] Conexión a base de datos SQL de inventarios
+- [] Compras desde la página
+- [] Rediseño de la interfaz de usuario
+- [] Mostrar imágenes locales

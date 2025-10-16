@@ -1,11 +1,9 @@
-"""
-Module to generate image URLs without making HTTP requests.
-Uses color_ids mapping and Bricklink URL patterns.
-"""
+"""Generate image URLs without HTTP using color_ids and Bricklink patterns."""
+from typing import List, Dict
 from color_ids import color_ids
 
 
-def generate_image_url(id_molde, color_name, id_color=None):
+def generate_image_url(id_molde: str, color_name: str, id_color: str | None = None) -> str:
     """
     Generate Bricklink image URL without making HTTP requests.
     
@@ -19,11 +17,13 @@ def generate_image_url(id_molde, color_name, id_color=None):
     Returns:
         str: Image URL or "N/A" if color_id cannot be determined
     """
-    # Normalize color name
-    color_normalized = color_name.strip().upper()
-    
-    # Get color ID from mapping
-    color_id = color_ids.get(color_normalized, None)
+    # Prefer provided numeric ID_COLOR when available
+    if id_color and str(id_color).strip().isdigit():
+        color_id = str(id_color).strip()
+    else:
+        # Normalize color name and map to ID
+        color_normalized = color_name.strip().upper()
+        color_id = color_ids.get(color_normalized, None)
     
     if color_id:
         # Use standard Bricklink image URL pattern
@@ -33,7 +33,7 @@ def generate_image_url(id_molde, color_name, id_color=None):
         return "N/A"
 
 
-def batch_generate_image_urls(pieces_list):
+def batch_generate_image_urls(pieces_list: List[Dict]) -> List[Dict]:
     """
     Generate image URLs for a list of pieces.
     
