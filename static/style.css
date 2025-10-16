@@ -61,6 +61,32 @@ body {
     gap: 1.5rem;
 }
 
+.social-icons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-right: 1.5rem;
+}
+
+.social-icon {
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.social-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
 .cart-button {
     background: rgba(255, 255, 255, 0.15);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -559,17 +585,17 @@ body {
 
 .card-image {
     background: #ffffff;
-    padding: 2rem;
+    /* padding: 2.25rem; slightly larger padding to accommodate bigger image */
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 200px;
+    min-height: 180px; /* increase image container height */
     border-bottom: 1px solid #e2e8f0;
 }
 
 .card-image img {
-    max-width: 160px;
-    max-height: 160px;
+    max-width: 350px;  /* increase image size */
+    max-height: 350px;
     object-fit: contain;
     transition: transform 0.3s ease;
 }
@@ -591,36 +617,26 @@ body {
     font-weight: 600;
     color: #1e293b;
     line-height: 1.4;
-    min-height: 2.8rem;
-}
-
-.card-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
+    min-height: 2.2rem; /* reduce min-height to tighten space for single-line titles */
 }
 
 .color-label {
+    display: block;
     font-size: 0.9rem;
-    color: #64748b;
-}
-
-.color-label strong {
-    color: #2563eb;
-    font-weight: 600;
+    color: #64748b; /* gray text only */
+    margin-bottom: 0.5rem; /* smaller gap below color */
 }
 
 .price {
+    display: block;
     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-    color: #ffffff;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.25rem;
     font-weight: 700;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem; /* tighter spacing around price */
 }
 
 .add-to-cart-btn {
@@ -822,13 +838,13 @@ body {
     }
 
     .card-image {
-        min-height: 180px;
-        padding: 1.5rem;
+        min-height: 200px;
+        padding: 1.75rem;
     }
 
     .card-image img {
-        max-width: 140px;
-        max-height: 140px;
+        max-width: 160px;
+        max-height: 160px;
     }
 
     .footer-content {
@@ -890,12 +906,6 @@ body {
     .card-grid {
         grid-template-columns: 1fr;
         gap: 1.25rem;
-    }
-
-    .card-info {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
     }
 
     .price {

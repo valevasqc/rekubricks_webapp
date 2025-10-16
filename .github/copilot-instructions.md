@@ -1,91 +1,164 @@
-<!-- Project-specific Copilot instructions for AI coding agents -->
-# Bricklink Webscraper — AI agent guide
+<!-- Project-specific AI agent instructions for RekuBricks -->
+# RekuBricks — Full-stack LEGO Catalog Web Application
 
-Short, actionable notes to help an AI agent be productive editing and extending this repository.
+Production-ready e-commerce catalog with webscraping pipeline, Flask backend, and vanilla JavaScript frontend. Built for Guatemala market (WhatsApp integration, Quetzal pricing).
 
-- Entry points
-  - `webscraping/webscraping.py` — main scraper. Builds URLs per piece, requests Bricklink pages, parses name/image/weight and writes `data/bricklink_pieces.xlsx`.
-  - `webscraping/import_excel.py` — reads `data/datos_inventario.xlsx` and returns a list of piece dicts (keys are uppercased: `ID_COLOR`, `ID_MOLDE`, `COLOR`).
-  - `webscraping/color_ids.py` — mapping from UPPERCASED color names to Bricklink `colorID` integers used to construct color-specific image URLs.
-  - `app.py` + `templates/index.html` — a minimal Flask front-end that reads `data/bricklink_pieces.xlsx` and renders pieces (used for demo UI).
+## Architecture Overview
 
-- Big picture / data flow
-  - Input: optional `data/datos_inventario.xlsx` or an inline `pieces` list in `webscraping/webscraping.py`.
-  - Lookup: map piece `COLOR` -> `colorID` using `webscraping/color_ids.py` (keys are uppercase; trim whitespace.)
-  - Scrape: request the general Bricklink page `catalogitem.page?P={pid}` for name and weight. If `colorID` exists, construct image URL `https://img.bricklink.com/P/{colorID}/{pid}.jpg` else extract image from the general page.
-  - Output: `data/bricklink_pieces.xlsx` with columns `Piece_ID, Piece_Name, Color, Image_URL, Weight`.
+**3-tier data flow:**
+```
+datos_inventario.xlsx → [webscraping] → bricklink_pieces.xlsx → [Flask/Pandas] → Dynamic HTML catalog
+```
 
-- Project-specific conventions and gotchas
-  - Column names from Excel are normalized to UPPERCASE inside `import_excel.py`. Expect keys `ID`, `ID MOLDE`, and `COLOR` when editing Excel parsing.
-  - `color_ids.py` may contain duplicate/overridden keys; use the dict as-is unless asked to dedupe.
-  - Requests use a simple User-Agent and synchronous sleeps: keep `headers = {"User-Agent": "Mozilla/5.0"}` and `time.sleep(1.5 + random.random())` to avoid excessive load on Bricklink.
-  - Output paths are relative: scraper writes `../data/bricklink_pieces.xlsx` when run from `webscraping/` directory — be careful with working directory when running scripts.
+**Key components:**
+- `webscraping/` — Bricklink scraper (BeautifulSoup + requests)
+- `app.py` — Flask backend with aggressive data cleaning
+- `templates/index.html` + `static/` — Cart system with localStorage persistence
+- `data/` — Excel files (input inventory + scraped output)
 
-- Selectors & parsing heuristics
-  - Piece title: prefer `h1#item-name-title`, fallback to older table-based selectors used in the repo.
-  - Weight: check `span#item-weight-info` on the general page.
-  - Image: if `colorID` present prefer constructed `img.bricklink.com` URL; otherwise use `td.pciMainImageHolder img` or other fallback selectors.
+## Critical Patterns
 
-- Developer workflows (discoverable and tested here)
-  - Install deps manually: `python -m pip install requests beautifulsoup4 pandas openpyxl` (no requirements.txt in repo).
-  - Run scraper (small sample first): edit `webscraping/webscraping.py` to use a short `pieces` list (3–5 items) or call `import_excel()` and run `python webscraping/webscraping.py` from the project root.
-  - Run the demo web UI: `python app.py` (Flask app reads `data/bricklink_pieces.xlsx`).
+### 1. Data ID Schema (affects all layers)
+Frontend uses **composite IDs** for cart uniqueness:
+```javascript
+// Button data-id format: "pieceId-color-normalized"
+data-id="{{ piece['Piece_ID'] + '-' + (piece['Color']|replace(' ','-')|lower) }}"
+```
+But also stores separate `data-id-color` and `data-id-molde` for WhatsApp order messages. **Never break this multi-ID pattern** — cart state depends on it.
 
-- When changing scraping logic
-  - Preserve polite delays and User-Agent. Test on a very small sample to avoid accidental heavy traffic to Bricklink.
-  - Add fallback selectors; Bricklink pages differ between endpoints.
+### 2. Excel Column Normalization
+`import_excel.py` uppercases ALL columns: `ID` → `ID_COLOR`, `ID MOLDE` → `ID_MOLDE`. When adding columns to Excel processing, always:
+```python
+df.columns = [col.strip().upper() for col in df.columns]
+df = df.rename(columns={"NEW COL": "NEW_COL"})
+```
 
-- Where to look for related code
-  - `webscraping/webscraping.py` — scraping logic and current selectors
-  - `webscraping/import_excel.py` — Excel input normalization
-  - `webscraping/color_ids.py` — color mapping (update by adding UPPERCASE keys)
-  - `app.py`, `templates/index.html`, `static/` — small Flask demo UI and CSS
+### 3. NaN Handling Philosophy
+`app.py` uses **defensive defaults** everywhere:
+```python
+df['Price'] = pd.to_numeric(df['Price'], errors='coerce').fillna(0.0)
+df['Category'] = df['Category'].fillna('Sin categoría')
+df = df[df['Image_URL'] != 'N/A']  # Drop unusable rows
+```
+**Always add new columns with `.fillna()` + validation filters** — frontend expects clean data.
 
-- Examples (copyable edits)
-  - Use Excel input: replace sample `pieces = [...]` in `webscraping/webscraping.py` with `pieces = import_excel()` and uncomment the `from import_excel import import_excel` import.
-  - Add color: to support a new color name add UPPERCASED key to `webscraping/color_ids.py`, e.g. `"TRANS PINK": 999`.
+### 4. localStorage Cart State
+Cart persists across sessions via `localStorage.rekubricksCart`. Uses **event delegation** for dynamic button updates:
+```javascript
+// Must target .add-to-cart-btn specifically, not parent divs
+document.querySelector(`.add-to-cart-btn[data-id="${id}"]`)
+```
+When adding cart features, update `updateCartDisplay()`, `updateCardButton()`, and `saveCart()` in sync.
 
-If anything here is unclear or you want stricter linting/tests/CI, tell me what to add and I will update this file.
-<!-- Project-specific Copilot instructions for AI coding agents -->
-# Project: Bricklink Webscraper (Python)
+### 5. Brand Color System
+**Strict palette** (REKUBRICKS brand):
+- Primary red: `#e10800` (prices, accents)
+- Yellow: `#ffe403` (highlights)
+- Blue: `#003465` (backgrounds, gradients)
 
-These short instructions help an AI coding agent be productive in this small Python project that scrapes Bricklink and writes results to Excel.
+Use these values literally — no hex variations. See `static/style.css` for gradient formulas.
 
-- Entry points
-  - `webscraping.py` — main scraper script. Reads a `pieces` list (or uses `import_excel.import_excel()`), requests Bricklink pages, parses name, image URL and weight, and writes `bricklink_pieces.xlsx`.
-  - `import_excel.py` — helper that reads `datos_inventario.xlsx` and returns a list of piece dicts with keys `ID_COLOR`, `ID_MOLDE`, `COLOR`.
-  - `color_ids.py` — local mapping of uppercased color names to Bricklink color IDs used to build color-specific requests.
+## Scraping Constraints
 
-- Big picture and data flow
-  - Input: `datos_inventario.xlsx` (optional). `import_excel()` produces a list of pieces (dicts).
-  - For each piece: determine `colorID` via `color_ids` mapping. Build either a color-specific URL (`catalogItemIn.asp?P={pid}&colorID={color_id}`) or the generic item page (`catalogitem.page?P={pid}`).
-  - Fetch HTML with `requests`, parse with `BeautifulSoup` to extract title, image src and weight (weight sometimes only on generic page). Save results to `bricklink_pieces.xlsx` via `pandas`.
+**Rate limiting is mandatory:**
+```python
+time.sleep(1.5 + random.random())  # Between each request
+headers = {"User-Agent": "Mozilla/5.0"}  # Always set
+```
 
-- Key patterns to preserve
-  - The code uses synchronous requests + polite delays: keep the `time.sleep(1.5 + random.random())` pause between requests.
-  - HTML selectors vary by page variant. `webscraping.py` first tries `h1#item-name-title`, then `table td font b` for the title. Image selectors depend on whether the request used `catalogItemIn.asp` or `catalogitem.page`.
-  - `color_ids.py` contains duplicate and overridden keys; prefer reading and using the current dict as-is (do not dedupe automatically unless asked).
+**Image URL logic:**
+1. If `color_ids.get(COLOR)` exists: use `https://img.bricklink.com/P/{colorID}/{pid}.jpg`
+2. Else: scrape `td.pciMainImageHolder img` from general page
 
-- Conventions and small gotchas
-  - Column names in `datos_inventario.xlsx` are normalized to UPPERCASE in `import_excel.py`. Use `ID`, `ID MOLDE`, and `COLOR` column names or update the renames accordingly.
-  - The project expects to run with Python and the following libraries: `requests`, `beautifulsoup4`, and `pandas`. There is no requirements file in the repo — create one if adding dependencies.
-  - Filenames and outputs are relative to the project root. `bricklink_pieces.xlsx` will be created/overwritten in the same folder as `webscraping.py`.
+**Selectors (in order of preference):**
+- Title: `h1#item-name-title` (current) → fallback to table selectors
+- Weight: `span#item-weight-info`
+- Image: Constructed URL > scraped `img src`
 
-- Examples to reference when making edits
-  - To use Excel input: replace the sample `pieces = [...]` in `webscraping.py` with `pieces = import_excel()` and uncomment the `from import_excel import import_excel` import.
-  - To add a new color: add an UPPERCASED key to `color_ids.py`, e.g. `"TRANS PINK": 999`.
+Test scraper with 3-5 pieces first: `pieces = [{"ID_MOLDE": "3023", "COLOR": "RED", "ID_COLOR": ""}]` in `webscraping.py`.
 
-- When changing scraping logic
-  - Always test on a small sample (3–5 pieces) to avoid accidental heavy traffic to Bricklink.
-  - Keep the `headers = {"User-Agent": "Mozilla/5.0"}` and respect robots and rate limits. Any increase in concurrency requires explicit review.
-  - When adding new selectors, include fallback selectors and preserve the existing heuristics (many Bricklink pages differ between endpoints).
+## Developer Workflows
 
-- Developer workflows (quick commands)
-  - Install dependencies (if using venv): `python -m pip install requests beautifulsoup4 pandas openpyxl`
-  - Run the scraper interactively: `python webscraping.py`
+**Setup (from project root):**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install flask pandas openpyxl requests beautifulsoup4
+```
 
-- Where to look for follow-ups
-  - If weights are missing, inspect `general_url = f"https://www.bricklink.com/v2/catalog/catalogitem.page?P={pid}"` parsing in `webscraping.py`.
-  - If color lookup fails, check capitalization and whitespace of names in `pieces` vs `color_ids` keys.
+**Run scraper (slow — ~2hrs full inventory):**
+```bash
+cd webscraping
+python webscraping.py  # Writes to ../data/bricklink_pieces.xlsx
+```
 
-If anything here is unclear or you'd like the agent to follow stricter style, tests, or add a requirements file, tell me which direction to take and I'll update this file.
+**Run web app:**
+```bash
+python app.py  # → http://127.0.0.1:5000
+```
+
+**No build step, no package.json** — pure Python backend + vanilla JS frontend.
+
+## Common Edits
+
+**Add new Excel column:**
+1. Update `load_pieces()` in `app.py`:
+   ```python
+   if "NewCol" not in df.columns:
+       df["NewCol"] = "default"
+   df['NewCol'] = df['NewCol'].fillna('default')
+   ```
+2. Update Jinja template: `{{ piece['NewCol']|e }}`
+
+**Add search filter:**
+Modify `applyFilters()` in `static/script.js`:
+```javascript
+const matchesNewField = card.getAttribute('data-newfield').includes(term);
+```
+
+**Add Bricklink color:**
+Add to `webscraping/color_ids.py`: `"TRANS PINK": 224` (keys are UPPERCASE, no spaces in keys).
+
+## WhatsApp Integration Details
+
+Phone: `+50253771641` (hardcoded in `script.js`)
+
+**Message format** (auto-generated):
+```
+Hola, quisiera realizar un pedido:
+
+Detalle:
+- ID Esp: 123, Item: 3023, Color: Red, Cantidad: 2
+- Item: 4073, Color: Black, Cantidad: 1
+
+Subtotal: Q45.50
+```
+
+Clean `.0` from numeric IDs: `String(id).replace('.0', '')` before message generation.
+
+## Search Behavior (Recent Change)
+
+Search **resets category filter to 'all'** automatically:
+```javascript
+function searchProducts(term) {
+    currentCategory = 'all';
+    document.getElementById('categoryFilter').value = 'all';
+    applyFilters();
+}
+```
+Don't revert this — it's intentional UX improvement.
+
+## File References
+
+**Backend:** `app.py` (Flask routes), `webscraping/webscraping.py` (scraper), `webscraping/import_excel.py` (Excel parser)  
+**Frontend:** `templates/index.html` (Jinja2), `static/script.js` (cart logic), `static/style.css` (responsive design)  
+**Data:** `data/bricklink_pieces.xlsx` (generated output), `data/datos_inventario.xlsx` (manual input)  
+**Config:** `webscraping/color_ids.py` (color mapping — 200+ entries)
+
+## Gotchas
+
+- CSS has duplicate rule warnings (line 307) — ignore unless breaking
+- Cart counter shows **unique items** (not total quantity): `cart.length` not `.reduce()`
+- Excel `Piece_ID` may be either `ID_COLOR` or `ID_MOLDE` depending on scraper logic (line 68-69 in `webscraping.py`)
+- Social icons in header use `target="_blank"` — keep for UX
+- No authentication/database — stateless Flask app with Excel as "DB"

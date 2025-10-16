@@ -10,6 +10,12 @@ let currentCategory = 'all';
  */
 function searchProducts(searchTerm) {
     currentSearchTerm = searchTerm.toLowerCase();
+    // Reset category to 'all' when searching
+    currentCategory = 'all';
+    const categorySelect = document.getElementById('categoryFilter');
+    if (categorySelect) {
+        categorySelect.value = 'all';
+    }
     applyFilters();
 }
 
@@ -91,8 +97,8 @@ function saveCart() {
 
 // Update cart counter in header
 function updateCartCount() {
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    document.getElementById('cartCount').textContent = totalItems;
+    const uniqueItems = cart.length;
+    document.getElementById('cartCount').textContent = uniqueItems;
 }
 
 // Update cart display in panel
