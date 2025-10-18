@@ -232,29 +232,31 @@ function updateCartDisplay() {
     // Render cart items
     cartItemsContainer.innerHTML = cart.map(item => `
         <div class="cart-item">
-            <div class="cart-item-image">
-                <img src="${item.image}" alt="${item.name}">
-            </div>
-            <div class="cart-item-details">
-                <div class="cart-item-name">${item.name}</div>
-                <div class="cart-item-color">Color: <strong>${item.color}</strong></div>
-                <div class="cart-item-bottom">
-                    <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="updateCartItemQuantity('${item.id}', -1)">−</button>
-                        <input type="number" class="quantity-input" value="${item.quantity}" step="1" onchange="updateCartItemQuantity('${item.id}', this.value)">
-                        <button class="quantity-btn" onclick="updateCartItemQuantity('${item.id}', 1)">+</button>
-                    </div>
-                    <div class="cart-item-price">Q${(item.price * item.quantity).toFixed(2)}</div>
-                    <button class="delete-item-btn" onclick="deleteCartItem('${item.id}')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                            <path d="M3 6h18"></path>
-                            <path d="M8 6v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            <path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"></path>
-                            <path d="M10 11v6"></path>
-                            <path d="M14 11v6"></path>
-                        </svg>
-                    </button>
+            <div class="cart-item-top">
+                <div class="cart-item-image">
+                    <img src="${item.image}" alt="${item.name}">
                 </div>
+                <div class="cart-item-details">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-color">Color: <strong>${item.color}</strong></div>
+                </div>
+            </div>
+            <div class="cart-item-bottom">
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="updateCartItemQuantity('${item.id}', -1)">−</button>
+                    <input type="number" class="quantity-input" value="${item.quantity}" step="1" onchange="updateCartItemQuantity('${item.id}', this.value)">
+                    <button class="quantity-btn" onclick="updateCartItemQuantity('${item.id}', 1)">+</button>
+                </div>
+                <div class="cart-item-price">Q${(item.price * item.quantity).toFixed(2)}</div>
+                <button class="delete-item-btn" onclick="deleteCartItem('${item.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     `).join('');
