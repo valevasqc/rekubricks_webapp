@@ -1,20 +1,29 @@
 <!-- Project-specific AI agent instructions for RekuBricks -->
 # RekuBricks — Full-stack LEGO Catalog Web Application
 
-Production-ready e-commerce catalog with webscraping pipeline, Flask backend, and vanilla JavaScript frontend. Built for Guatemala market (WhatsApp integration, Quetzal pricing).
+Production-ready e-commerce catalog with optimized webscraping pipeline, Flask backend, and vanilla JavaScript frontend. Built for Guatemala market (WhatsApp integration, Quetzal pricing).
 
 ## Architecture Overview
 
 **3-tier data flow:**
 ```
-datos_inventario.xlsx → [webscraping] → bricklink_pieces.xlsx → [Flask/Pandas] → Dynamic HTML catalog
+datos_inventario.xlsx → [modular webscraper] → bricklink_pieces.xlsx → [Flask/Pandas] → Dynamic HTML catalog
 ```
 
 **Key components:**
-- `webscraping/` — Bricklink scraper (BeautifulSoup + requests)
-- `app.py` — Flask backend with aggressive data cleaning
+- `webscraping/` — Modular Bricklink scraper (BeautifulSoup + requests) with 5 specialized modules
+- `app.py` — Flask backend with type hints and defensive data cleaning
 - `templates/index.html` + `static/` — Cart system with localStorage persistence
 - `data/` — Excel files (input inventory + scraped output)
+
+**Webscraper V2 Architecture (modular):**
+```
+webscraping.py (orchestrator)
+├── import_excel.py       → Load inventory + unique moldes
+├── scrape_moldes.py      → Scrape ~1000 ID_MOLDEs (name, weight)
+├── process_categories.py → Classify pieces using categories.py
+└── generate_images.py    → Build URLs via color_ids (no HTTP)
+```
 
 ## Critical Patterns
 
@@ -31,9 +40,22 @@ But also stores separate `data-id-color` and `data-id-molde` for WhatsApp order 
 ```python
 df.columns = [col.strip().upper() for col in df.columns]
 df = df.rename(columns={"NEW COL": "NEW_COL"})
+# CRITICAL: Convert ID columns to strings and strip 'nan'
+df["ID_MOLDE"] = df["ID_MOLDE"].astype(str).str.strip().replace('nan', '')
 ```
 
-### 3. NaN Handling Philosophy
+### 3. Type Hints are Standard
+All Python modules now use type hints (`typing.List`, `typing.Dict`, etc.). When adding functions, follow this pattern:
+```python
+def my_function(pieces: List[Dict[str, Any]]) -> List[Dict]:
+    """Concise one-line summary.
+    
+    Longer description if needed; use Returns/Args sections.
+    """
+    return processed_pieces
+```
+
+### 4. NaN Handling Philosophy
 `app.py` uses **defensive defaults** everywhere:
 ```python
 df['Price'] = pd.to_numeric(df['Price'], errors='coerce').fillna(0.0)
@@ -42,7 +64,7 @@ df = df[df['Image_URL'] != 'N/A']  # Drop unusable rows
 ```
 **Always add new columns with `.fillna()` + validation filters** — frontend expects clean data.
 
-### 4. localStorage Cart State
+### 5. localStorage Cart State
 Cart persists across sessions via `localStorage.rekubricksCart`. Uses **event delegation** for dynamic button updates:
 ```javascript
 // Must target .add-to-cart-btn specifically, not parent divs
@@ -50,13 +72,13 @@ document.querySelector(`.add-to-cart-btn[data-id="${id}"]`)
 ```
 When adding cart features, update `updateCartDisplay()`, `updateCardButton()`, and `saveCart()` in sync.
 
-### 5. Brand Color System
+### 6. Brand Color System
 **Strict palette** (REKUBRICKS brand):
-- Primary red: `#e10800` (prices, accents)
+- Primary red: `#e10800` (minor accents)
 - Yellow: `#ffe403` (highlights)
-- Blue: `#003465` (backgrounds, gradients)
+- Blue: `#003465` (main accents, backgrounds, gradients)
 
-Use these values literally — no hex variations. See `static/style.css` for gradient formulas.
+Minor variations are allowed to maintain visual cohesion. Neutral colors (grays, whites) can be used freely. See `static/style.css` for gradient formulas.
 
 ## Scraping Constraints
 
@@ -66,16 +88,16 @@ time.sleep(1.5 + random.random())  # Between each request
 headers = {"User-Agent": "Mozilla/5.0"}  # Always set
 ```
 
-**Image URL logic:**
-1. If `color_ids.get(COLOR)` exists: use `https://img.bricklink.com/P/{colorID}/{pid}.jpg`
-2. Else: scrape `td.pciMainImageHolder img` from general page
+**Image URL logic (NO HTTP requests for images):**
+1. `generate_images.py` prefers numeric `ID_COLOR` if provided: `https://img.bricklink.com/P/{ID_COLOR}/{id_molde}.jpg`
+2. Else maps color name via `color_ids.get(COLOR.upper())` to construct URL
+3. Returns "N/A" if color unmapped (no scraping fallback in V2)
 
-**Selectors (in order of preference):**
-- Title: `h1#item-name-title` (current) → fallback to table selectors
+**Scraping selectors (only for ID_MOLDE metadata):**
+- Title: `h1#item-name-title`
 - Weight: `span#item-weight-info`
-- Image: Constructed URL > scraped `img src`
 
-Test scraper with 3-5 pieces first: `pieces = [{"ID_MOLDE": "3023", "COLOR": "RED", "ID_COLOR": ""}]` in `webscraping.py`.
+**Key optimization:** Scrape ~1000 unique ID_MOLDEs once, reuse data across ~4000+ color variants. Image URLs generated without requests.
 
 ## Developer Workflows
 
@@ -150,15 +172,19 @@ Don't revert this — it's intentional UX improvement.
 
 ## File References
 
-**Backend:** `app.py` (Flask routes), `webscraping/webscraping.py` (scraper), `webscraping/import_excel.py` (Excel parser)  
-**Frontend:** `templates/index.html` (Jinja2), `static/script.js` (cart logic), `static/style.css` (responsive design)  
-**Data:** `data/bricklink_pieces.xlsx` (generated output), `data/datos_inventario.xlsx` (manual input)  
-**Config:** `webscraping/color_ids.py` (color mapping — 200+ entries)
+**Backend:** `app.py` (Flask routes + type hints), `webscraping/webscraping.py` (orchestrator)  
+**Scraper modules:** `scrape_moldes.py`, `generate_images.py`, `process_categories.py`, `import_excel.py`  
+**Frontend:** `templates/index.html` (Jinja2), `static/script.js` (cart + search), `static/style.css`  
+**Data:** `data/bricklink_pieces.xlsx` (output), `data/datos_inventario.xlsx` (input), `data/id_molde.xlsx` (unique molds)  
+**Config:** `webscraping/color_ids.py` (200+ color→ID mappings), `webscraping/categories.py` (21 categories)
 
-## Gotchas
+## Gotchas & TODOs
 
-- CSS has duplicate rule warnings (line 307) — ignore unless breaking
 - Cart counter shows **unique items** (not total quantity): `cart.length` not `.reduce()`
-- Excel `Piece_ID` may be either `ID_COLOR` or `ID_MOLDE` depending on scraper logic (line 68-69 in `webscraping.py`)
+- Excel `Piece_ID` may be either `ID_COLOR` or `ID_MOLDE` depending on scraper logic
 - Social icons in header use `target="_blank"` — keep for UX
 - No authentication/database — stateless Flask app with Excel as "DB"
+- **Known TODOs in code:**
+  - `app.py`: Connect to SQL (line 14), flesh out UI (line 9), consider using ID_MOLDE+COLOR composite key (line 48)
+  - `script.js`: Allow local images via GCP (line 122), add quantity validation (line 291)
+  - `color_ids.py`: Auto-populate from website (line 86)

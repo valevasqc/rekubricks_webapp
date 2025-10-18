@@ -135,8 +135,8 @@ python app.py
 - [x] Integración WhatsApp Business
 
 ### **Mejoras futuras:**
-- [] Hosting
-- [] Conexión a base de datos SQL de inventarios
-- [] Compras desde la página
-- [] Rediseño de la interfaz de usuario
-- [] Mostrar imágenes locales
+- Hosting
+- Conexión a base de datos SQL de inventarios
+- Compras desde la página
+- Rediseño de la interfaz de usuario
+- Mostrar imágenes locales
