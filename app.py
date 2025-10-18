@@ -6,6 +6,8 @@ with a client-side cart and WhatsApp integration.
 from typing import List, Dict
 from flask import Flask, render_template
 import pandas as pd
+import os
+from waitress import serve  
 # TODO: flesh out UI
 
 app = Flask(__name__)
@@ -85,6 +87,5 @@ def index():
     return render_template("index.html", pieces=pieces, categories=categories)
 
 if __name__ == "__main__":
-    from waitress import serve  
-    serve(app, host="0.0.0.0", port=10000)
-    # app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # fallback for local dev
+    serve(app, host="0.0.0.0", port=port)
