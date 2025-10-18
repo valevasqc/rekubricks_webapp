@@ -1,142 +1,166 @@
 
-# RekuBricks - Catálogo Web de Piezas LEGO
+# RekuBricks
 
-[Enlace a GitHub](https://github.com/valevasqc/rekubricks_webapp)
+A web-based LEGO parts catalog with integrated shopping cart and WhatsApp ordering system for the Guatemala market.
 
-**Alumnos:** Valeria Vásquez, Pedro Marroquín, Andrés Juárez, Julio Girón, Andrea Nisthal  
+🔗 **[Live Demo](https://rekubricks.onrender.com/)**
+
+## Features
+
+- **Smart Search & Filtering** - Real-time search by piece name, color, or ID with dynamic category filters
+- **Persistent Shopping Cart** - Client-side cart with localStorage persistence across sessions
+- **WhatsApp Integration** - One-click order generation with automatic message formatting
+- **Automated Data Pipeline** - Optimized web scraper that extracts piece data from Bricklink
+- **Dynamic Catalog** - Responsive product cards with images, categories, and pricing
+- **Mobile-Friendly** - Fully responsive design for all devices
+
+## Tech Stack
+
+- **Backend:** Flask, Pandas
+- **Frontend:** Vanilla JavaScript, HTML5, CSS3
+- **Data:** Excel-based inventory management
+- **Scraping:** BeautifulSoup4, Requests
 
 ---
 
-## Descripción del Proyecto
+## Quick Start
 
-**RekuBricks** es una aplicación web completa para la venta de piezas LEGO que combina:
+### Prerequisites
 
-1. **Webscraper automatizado** que extrae información de piezas desde [Bricklink.com](https://www.bricklink.com/)
-2. **Aplicación web** con catálogo interactivo, carrito de compras y sistema de pedidos
-3. **Integración con WhatsApp** para facilitar el proceso de venta
+- Python 3.7 or higher
+- pip package manager
 
-El objetivo es crear una plataforma **simple y funcional** donde los clientes puedan navegar piezas LEGO, agregarlas a un carrito y realizar pedidos a través de WhatsApp **sin necesidad de registro**.
+### Installation
 
----
+1. Clone the repository
+```bash
+git clone https://github.com/valevasqc/rekubricks_webapp.git
+cd rekubricks_webapp
+```
 
-## Arquitectura del Sistema
+2. Create and activate virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies
+```bash
+pip install flask pandas openpyxl requests beautifulsoup4
+```
+
+4. Run the application
+```bash
+python app.py
+```
+
+5. Open your browser to `http://127.0.0.1:5000`
+
+## Project Structure
 
 ```
 rekubricks_webapp/
-│
-├── 🚀 app.py                     # Backend Flask - servidor principal
-│
-├── 📂 templates/
-│   └── index.html                # Interfaz principal (HTML + Jinja2)
-│
-├── 📂 static/
-│   ├── style.css                 # Estilos CSS responsivos
-│   ├── script.js                 # Lógica JavaScript (carrito, búsqueda, WhatsApp)
-│   └── logo.png                  # Logo de la marca
-│
-├── 📂 data/
-│   ├── bricklink_pieces.xlsx     # Base de datos principal (generada por scraper)
-│   └── datos_inventario.xlsx     # Inventario de entrada (opcional)
-│
-└── 📂 webscraping/               # Módulo de extracción de datos
-    ├── webscraping.py            # Orquestador del scraping (por ID_MOLDE)
-    ├── scrape_moldes.py          # Extrae nombre y peso por ID_MOLDE
-    ├── generate_images.py        # Genera URLs de imagen por color (sin requests)
-    ├── process_categories.py     # Clasifica piezas por categoría
-    ├── import_excel.py           # Procesador de inventario local (IDs/colores)
-    ├── categories.py             # Lista de categorías
-    └── color_ids.py              # Mapeo de colores a IDs de Bricklink
+├── app.py                        # Flask application server
+├── templates/
+│   └── index.html                # Main catalog interface
+├── static/
+│   ├── style.css                 # Responsive styles
+│   ├── script.js                 # Cart and search logic
+│   └── logo.png                  # Brand assets
+├── data/
+│   ├── bricklink_pieces.xlsx     # Processed catalog data
+│   └── datos_inventario.xlsx     # Input inventory
+└── webscraping/                  # Data extraction pipeline
+    ├── webscraping.py            # Main orchestrator
+    ├── scrape_moldes.py          # Piece metadata scraper
+    ├── generate_images.py        # Image URL generator
+    ├── process_categories.py     # Category classifier
+    ├── import_excel.py           # Inventory processor
+    ├── categories.py             # Category definitions
+    └── color_ids.py              # Bricklink color mappings
 ```
 
----
+## Data Pipeline
 
-## Flujo de Datos
+The scraper optimizes data collection by processing unique piece molds (~1,000) and reusing metadata across color variants (~4,000+):
 
-### 1. **Extracción de Datos (Webscraping)**
+### 1. Data Extraction
 ```
-datos_inventario.xlsx → webscraping.py → Bricklink (scraping) → bricklink_pieces.xlsx
-```
-
-- Lee inventario local con columnas: `ID`, `ID_COLOR`, `ID_MOLDE`, `COLOR`
-- Mapea colores a IDs numéricos usando `color_ids.py`
-- Extrae de Bricklink nombre y peso por `ID_MOLDE` (menos requests, con rate limiting)
-- Genera URLs de imagen por color sin requests usando `color_ids.py`
-- Genera Excel final con: `Piece_ID`, `ID_COLOR`, `ID_MOLDE`, `Piece_Name`, `Color`, `Image_URL`, `Weight`, `Category`, `Price`
-
-### 2. **Procesamiento Web (Flask + Pandas)**
-```
-bricklink_pieces.xlsx → app.py → HTML dinámico
+datos_inventario.xlsx → webscraping.py → Bricklink → bricklink_pieces.xlsx
 ```
 
-- Carga y limpia datos (manejo de valores NaN, validación)
-- Extrae categorías automáticamente
-- Renderiza tarjetas con información completa
+- Loads local inventory with piece IDs and color mappings
+- Scrapes piece names and weights from Bricklink per unique mold ID
+- Generates image URLs using color-to-ID mapping (no additional HTTP requests)
+- Applies automatic categorization based on piece names
+- Outputs complete dataset: `Piece_ID`, `ID_COLOR`, `ID_MOLDE`, `Piece_Name`, `Color`, `Image_URL`, `Weight`, `Category`, `Price`
 
-### 3. **Interacción del Usuario (Frontend)**
+### 2. Web Application
 ```
-Navegación → Búsqueda/Filtros → Carrito → WhatsApp
-```
-
-- **Búsqueda en tiempo real** por nombre, color o ID
-- **Filtros por categoría** dinámicos
-- **Carrito persistente** (localStorage)
-- **Generación automática** de mensaje de WhatsApp
-
----
-
-
-## Instrucciones de Ejecución
-
-### **Requisitos Previos**
-```bash
-# Verificar Python 3.7+
-python --version
-
-# Crear entorno virtual (recomendado)
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# .venv\Scripts\activate   # Windows
+bricklink_pieces.xlsx → Flask/Pandas → Dynamic HTML
 ```
 
-### **Instalación de Dependencias**
-```bash
-pip install flask requests beautifulsoup4 pandas openpyxl
+- Loads and validates catalog data with defensive defaults
+- Extracts unique categories for filtering
+- Renders responsive product cards with Jinja2 templates
+
+### 3. User Interaction
+```
+Browse → Search/Filter → Add to Cart → WhatsApp Order
 ```
 
-### **1. Ejecutar Webscraper (Opcional)**
+- Client-side search matches name, color, or piece ID
+- Dynamic category filtering
+- Persistent cart stored in localStorage
+- Automated WhatsApp message generation with order details
+
+## Running the Web Scraper
+
+The scraper is optional if you already have processed data. To regenerate the catalog:
+
 ```bash
 cd webscraping
 python webscraping.py
 ```
-> ⚠️ **Nota:** Tarda aprox 2 horas correr el scraper completo (incluye rate limiting educado entre requests). Se pueden usar valores de ejemplo (incluidos en comentarios de `webscraping.py`).
 
-### **2. Iniciar Aplicación Web**
-```bash
-# Desde la raíz del proyecto
-python app.py
+> **Note:** Full scrape takes approximately 2 hours due to polite rate limiting. The scraper respects Bricklink's servers with randomized delays between requests.
+
+## Configuration
+
+### WhatsApp Integration
+Edit `static/script.js` to configure the target phone number:
+```javascript
+const phoneNumber = '+50253771641'; // Format: country code + number
 ```
 
-### **3. Acceder al Sistema**
+### Color Mappings
+Add or modify Bricklink color IDs in `webscraping/color_ids.py`:
+```python
+color_ids = {
+    "RED": 5,
+    "BLUE": 7,
+    // Add more mappings
+}
 ```
-🌐 URL: http://127.0.0.1:5000
-📱 Compatible con dispositivos móviles
-```
 
----
+### Categories
+Customize piece categories in `webscraping/categories.py` to match your inventory classification needs.
 
-## Estado del Proyecto
+## Roadmap
 
-### **Completado:**
-- [x] Scraper funcional con manejo de errores
-- [x] Optimización: scraping por ID_MOLDE y generación de imágenes sin requests
-- [x] Aplicación web responsive completa
-- [x] Sistema de carrito con persistencia
-- [x] Búsqueda y filtrado en tiempo real
-- [x] Integración WhatsApp Business
+- [ ] Database integration (SQL) for inventory management
+- [ ] Admin panel for catalog updates
+- [ ] Direct payment processing
+- [ ] User authentication and order history
+- [ ] Enhanced UI/UX with modern framework
 
-### **Mejoras futuras:**
-- Hosting
-- Conexión a base de datos SQL de inventarios
-- Compras desde la página
-- Rediseño de la interfaz de usuario
-- Mostrar imágenes locales
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Contact
+
+For questions or support, please open an issue on GitHub.
+
+
