@@ -3,23 +3,36 @@
 Flask backend that reads piece data from Excel and renders a catalog
 with a client-side cart and WhatsApp integration.
 """
-from typing import List, Dict
+from typing import List, Dict, Optional
 from flask import Flask, render_template
 import pandas as pd
 import os
 
-# TODO: flesh out UI
+# TODO: flesh out UI --- IGNORE ---
 app = Flask(__name__)
 
 EXCEL_PATH = "data/bricklink_pieces.xlsx"
-# TODO: connect to SQL
+# TODO: connect to SQL --- IGNORE ---
+
+# Global cache to store loaded data (loaded once at startup)
+_pieces_cache: Optional[List[Dict]] = None
+_categories_cache: Optional[List[str]] = None
 
 def load_pieces() -> List[Dict]:
     """Load and clean piece data from the Excel file.
 
     Returns a list of row dicts ready for rendering; applies defensive
     defaults for missing columns and values.
+    
+    Uses cache if available to avoid reloading on every request.
     """
+    global _pieces_cache
+    
+    # Return cached data if available
+    if _pieces_cache is not None:
+        return _pieces_cache
+    
+    print("Loading pieces from Excel (this should only happen once)...")
     df = pd.read_excel(EXCEL_PATH)
     
     # Handle missing Price column gracefully
@@ -60,23 +73,51 @@ def load_pieces() -> List[Dict]:
     df = df[df['Image_URL'] != '']
     df = df[df['Image_URL'] != 'N/A']
     
-    return df.to_dict(orient="records")
+    # Cache the results
+    _pieces_cache = df.to_dict(orient="records")
+    print(f"Loaded and cached {len(_pieces_cache)} pieces")
+    
+    return _pieces_cache
 
 def get_categories() -> List[str]:
     """Extract unique categories from the Excel file.
 
     Returns a sorted list of unique category names; if the column is
     missing, returns the fallback category.
+    
+    Uses cache if available to avoid reloading on every request.
     """
+    global _categories_cache
+    
+    # Return cached data if available
+    if _categories_cache is not None:
+        return _categories_cache
+    
+    print("Loading categories from Excel (this should only happen once)...")
     df = pd.read_excel(EXCEL_PATH)
     
     # Handle missing Category column gracefully
     if "Category" not in df.columns:
-        return ["Sin categoría"]
+        _categories_cache = ["Sin categoría"]
+        return _categories_cache
     
     # Get unique categories, excluding NaN values
     categories = df["Category"].dropna().unique().tolist()
-    return sorted(categories)
+    _categories_cache = sorted(categories)
+    print(f"Loaded and cached {len(_categories_cache)} categories")
+    
+    return _categories_cache
+
+def warmup_cache():
+    """Preload data into cache on application startup."""
+    print("=" * 60)
+    print("WARMUP: Preloading data into cache...")
+    print("=" * 60)
+    load_pieces()
+    get_categories()
+    print("=" * 60)
+    print("WARMUP: Complete! Application ready to serve requests.")
+    print("=" * 60)
 
 @app.route("/")
 def index():
@@ -84,6 +125,9 @@ def index():
     pieces = load_pieces()
     categories = get_categories()
     return render_template("index.html", pieces=pieces, categories=categories)
+
+# Warmup cache when app starts
+warmup_cache()
 
 if __name__ == "__main__":
     # For local development only
