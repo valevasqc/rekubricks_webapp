@@ -3,6 +3,114 @@
 // Global state for filtering
 let currentSearchTerm = '';
 let currentCategory = 'all';
+let visibleCardsCount = 50; // Initial load count
+let allCards = [];
+let isLoading = false;
+
+/**
+ * Initialize lazy loading on page load
+ */
+function initializeLazyLoading() {
+    allCards = Array.from(document.querySelectorAll('.card'));
+    
+    // Initially hide all cards except first batch
+    allCards.forEach((card, index) => {
+        if (index >= visibleCardsCount) {
+            card.style.display = 'none';
+            card.dataset.lazyLoaded = 'false';
+        } else {
+            card.dataset.lazyLoaded = 'true';
+        }
+    });
+
+    // Setup intersection observer for infinite scroll
+    setupInfiniteScroll();
+}
+
+/**
+ * Setup infinite scroll to load more cards as user scrolls
+ */
+function setupInfiniteScroll() {
+    const options = {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !isLoading) {
+                loadMoreCards();
+            }
+        });
+    }, options);
+
+    // Create a sentinel element at the bottom
+    const sentinel = document.createElement('div');
+    sentinel.id = 'scroll-sentinel';
+    sentinel.style.height = '1px';
+    const cardGrid = document.getElementById('cardGrid');
+    if (cardGrid) {
+        cardGrid.appendChild(sentinel);
+        observer.observe(sentinel);
+    }
+}
+
+/**
+ * Load more cards progressively
+ */
+function loadMoreCards() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    const loadBatchSize = 50;
+    
+    // Filter cards that match current search/category and aren't loaded yet
+    const unloadedCards = allCards.filter(card => {
+        const matchesSearch = cardMatchesSearch(card);
+        const matchesCategory = cardMatchesCategory(card);
+        const isUnloaded = card.dataset.lazyLoaded === 'false';
+        return matchesSearch && matchesCategory && isUnloaded;
+    });
+
+    // Load next batch
+    const cardsToLoad = unloadedCards.slice(0, loadBatchSize);
+    cardsToLoad.forEach(card => {
+        card.style.display = 'flex';
+        card.dataset.lazyLoaded = 'true';
+    });
+
+    visibleCardsCount += cardsToLoad.length;
+    
+    setTimeout(() => {
+        isLoading = false;
+    }, 100);
+}
+
+/**
+ * Check if card matches current search term
+ */
+function cardMatchesSearch(card) {
+    if (currentSearchTerm === '') return true;
+    
+    const cardName = card.getAttribute('data-name') || '';
+    const cardColor = card.getAttribute('data-color') || '';
+    const cardId = card.getAttribute('data-id') || '';
+    
+    return cardName.includes(currentSearchTerm) || 
+           cardColor.includes(currentSearchTerm) || 
+           cardId.includes(currentSearchTerm);
+}
+
+/**
+ * Check if card matches current category
+ */
+function cardMatchesCategory(card) {
+    if (currentCategory === 'all') return true;
+    
+    const cardCategory = card.getAttribute('data-category') || '';
+    return cardCategory === currentCategory;
+}
 
 /**
  * Search products by term - matches name, color, or ID
@@ -16,6 +124,8 @@ function searchProducts(searchTerm) {
     if (categorySelect) {
         categorySelect.value = 'all';
     }
+    // Reset lazy loading
+    visibleCardsCount = 50;
     applyFilters();
 }
 
@@ -25,6 +135,7 @@ function searchProducts(searchTerm) {
  */
 function filterByCategory(category) {
     currentCategory = category;
+    visibleCardsCount = 50; // Reset on category change
     applyFilters();
 }
 
@@ -34,27 +145,25 @@ function filterByCategory(category) {
  */
 function applyFilters() {
     const cards = document.querySelectorAll('.card');
+    let visibleCount = 0;
     
     cards.forEach(card => {
-        const cardName = card.getAttribute('data-name') || '';
-        const cardColor = card.getAttribute('data-color') || '';
-        const cardId = card.getAttribute('data-id') || '';
-        const cardCategory = card.getAttribute('data-category') || '';
+        const matchesSearch = cardMatchesSearch(card);
+        const matchesCategory = cardMatchesCategory(card);
         
-        // Check search criteria
-        const matchesSearch = currentSearchTerm === '' || 
-            cardName.includes(currentSearchTerm) || 
-            cardColor.includes(currentSearchTerm) || 
-            cardId.includes(currentSearchTerm);
-        
-        // Check category criteria
-        const matchesCategory = currentCategory === 'all' || cardCategory === currentCategory;
-        
-        // Show card only if it matches both criteria
+        // Show card only if it matches both criteria and is within visible limit
         if (matchesSearch && matchesCategory) {
-            card.style.display = 'flex';
+            if (visibleCount < visibleCardsCount) {
+                card.style.display = 'flex';
+                card.dataset.lazyLoaded = 'true';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+                card.dataset.lazyLoaded = 'false';
+            }
         } else {
             card.style.display = 'none';
+            card.dataset.lazyLoaded = 'false';
         }
     });
 }
@@ -384,4 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleClearSearchButton();
         });
     }
+
+    // Initialize lazy loading
+    initializeLazyLoading();
 });
